@@ -24,6 +24,7 @@ macro_rules! marker {
 pub trait Host {
     marker!(
         fn scan(&self, _signature: &str, _index: usize) -> *const u8;
+        fn sleep(&self, _ms: u64) -> ();
 
         // Port I/O functions:
         fn outb(&self, _port: u16, _value: u8) -> ();
@@ -34,7 +35,10 @@ pub trait Host {
         fn inw(&self, _port: u16) -> u16;
         fn ind(&self, _port: u16) -> u32;
 
-        fn sleep(&self, _ms: u64) -> ();
+        // PCI read functions:
+        fn pci_readb(&self, _seg: u16, _bus: u8, _slot: u8, _fun: u8, _offset: u16) -> u8;
+        fn pci_readw(&self, _seg: u16, _bus: u8, _slot: u8, _fun: u8, _offset: u16) -> u16;
+        fn pci_readd(&self, _seg: u16, _bus: u8, _slot: u8, _fun: u8, _offset: u16) -> u32;
     );
 
     unsafe fn alloc(&self, size: usize) -> *mut u8 {
@@ -138,4 +142,20 @@ unsafe extern "C" fn laihost_ind(port: u16) -> u32 {
 #[no_mangle]
 unsafe extern "C" fn laihost_sleep(ms: u64) {
     get_laihost().sleep(ms)
+}
+
+// PCI read functions:
+#[no_mangle]
+unsafe extern "C" fn laihost_pci_readb(seg: u16, bus: u8, slot: u8, fun: u8, offset: u16) -> u8 {
+    get_laihost().pci_readb(seg, bus, slot, fun, offset)
+}
+
+#[no_mangle]
+unsafe extern "C" fn laihost_pci_readw(seg: u16, bus: u8, slot: u8, fun: u8, offset: u16) -> u16 {
+    get_laihost().pci_readw(seg, bus, slot, fun, offset)
+}
+
+#[no_mangle]
+unsafe extern "C" fn laihost_pci_readd(seg: u16, bus: u8, slot: u8, fun: u8, offset: u16) -> u32 {
+    get_laihost().pci_readd(seg, bus, slot, fun, offset)
 }
