@@ -2,7 +2,7 @@ use core::alloc::Layout;
 
 use alloc::boxed::Box;
 
-use super::c_str_as_str;
+use super::helper::*;
 
 static mut LAI_HOST: Option<Box<dyn Host>> = None;
 
