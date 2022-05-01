@@ -1,15 +1,39 @@
 use core::alloc::Layout;
 
-use alloc::boxed::Box;
+use alloc::sync::Arc;
 
 use super::helper::*;
 
-static mut LAI_HOST: Option<Box<dyn Host>> = None;
+static mut LAI_HOST: Option<Arc<dyn Host>> = None;
+
+fn get_laihost() -> Arc<dyn Host> {
+    unsafe {
+        LAI_HOST
+            .as_ref()
+            .expect("lai: host not initialized")
+            .clone()
+    }
+}
+
+macro_rules! marker {
+    ($(fn $name:tt(&self, $($pname:tt: $ptyp:ty),*) -> $ret:ty);*;) => {
+        $(fn $name(&self, $($pname: $ptyp),*) -> $ret { unimplemented!() })*
+    };
+}
 
 pub trait Host {
-    fn scan(&self, _signature: &str, _index: usize) -> *const u8 {
-        unimplemented!()
-    }
+    marker!(
+        fn scan(&self, _signature: &str, _index: usize) -> *const u8;
+
+        // Port I/O functions:
+        fn outb(&self, _port: u16, _value: u8) -> ();
+        fn outw(&self, _port: u16, _value: u16) -> ();
+        fn outd(&self, _port: u16, _value: u32) -> ();
+
+        fn inb(&self, _port: u16) -> u8;
+        fn inw(&self, _port: u16) -> u16;
+        fn ind(&self, _port: u16) -> u32;
+    );
 
     unsafe fn alloc(&self, size: usize) -> *mut u8 {
         let layout = Layout::from_size_align_unchecked(size, 16);
@@ -27,7 +51,7 @@ pub trait Host {
     }
 }
 
-pub fn init(host: Box<dyn Host>) {
+pub fn init(host: Arc<dyn Host>) {
     unsafe {
         assert!(LAI_HOST.is_none());
         LAI_HOST = Some(host);
@@ -58,33 +82,52 @@ extern "C" fn laihost_panic(message: *const u8) -> ! {
 
 #[no_mangle]
 unsafe extern "C" fn laihost_malloc(size: usize) -> *mut u8 {
-    LAI_HOST
-        .as_ref()
-        .expect("lai: host not initialized")
-        .alloc(size)
+    get_laihost().alloc(size)
 }
 
 #[no_mangle]
 unsafe extern "C" fn laihost_free(ptr: *mut u8, size: usize) {
-    LAI_HOST
-        .as_ref()
-        .expect("lai: host not initialized")
-        .dealloc(ptr, size)
+    get_laihost().dealloc(ptr, size)
 }
 
 #[no_mangle]
 unsafe extern "C" fn laihost_realloc(ptr: *mut u8, old_size: usize, new_size: usize) -> *mut u8 {
-    LAI_HOST
-        .as_ref()
-        .expect("lai: host not initialized")
-        .realloc(ptr, old_size, new_size)
+    get_laihost().realloc(ptr, old_size, new_size)
 }
 
 #[no_mangle]
 unsafe extern "C" fn laihost_scan(signature: *const u8, index: usize) -> *const u8 {
     let signature = c_str_as_str(signature);
-    LAI_HOST
-        .as_ref()
-        .expect("lai: host not initialized")
-        .scan(signature, index)
+    get_laihost().scan(signature, index)
+}
+
+// Port I/O functions:
+#[no_mangle]
+unsafe extern "C" fn laihost_outb(port: u16, value: u8) {
+    get_laihost().outb(port, value)
+}
+
+#[no_mangle]
+unsafe extern "C" fn laihost_outw(port: u16, value: u16) {
+    get_laihost().outw(port, value)
+}
+
+#[no_mangle]
+unsafe extern "C" fn laihost_outd(port: u16, value: u32) {
+    get_laihost().outd(port, value)
+}
+
+#[no_mangle]
+unsafe extern "C" fn laihost_inb(port: u16) -> u8 {
+    get_laihost().inb(port)
+}
+
+#[no_mangle]
+unsafe extern "C" fn laihost_inw(port: u16) -> u16 {
+    get_laihost().inw(port)
+}
+
+#[no_mangle]
+unsafe extern "C" fn laihost_ind(port: u16) -> u32 {
+    get_laihost().ind(port)
 }
