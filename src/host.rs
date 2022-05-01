@@ -33,6 +33,8 @@ pub trait Host {
         fn inb(&self, _port: u16) -> u8;
         fn inw(&self, _port: u16) -> u16;
         fn ind(&self, _port: u16) -> u32;
+
+        fn sleep(&self, _ms: u64) -> ();
     );
 
     unsafe fn alloc(&self, size: usize) -> *mut u8 {
@@ -130,4 +132,10 @@ unsafe extern "C" fn laihost_inw(port: u16) -> u16 {
 #[no_mangle]
 unsafe extern "C" fn laihost_ind(port: u16) -> u32 {
     get_laihost().ind(port)
+}
+
+// Thread functions:
+#[no_mangle]
+unsafe extern "C" fn laihost_sleep(ms: u64) {
+    get_laihost().sleep(ms)
 }
