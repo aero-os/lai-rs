@@ -39,6 +39,10 @@ pub trait Host {
         fn pci_readb(&self, _seg: u16, _bus: u8, _slot: u8, _fun: u8, _offset: u16) -> u8;
         fn pci_readw(&self, _seg: u16, _bus: u8, _slot: u8, _fun: u8, _offset: u16) -> u16;
         fn pci_readd(&self, _seg: u16, _bus: u8, _slot: u8, _fun: u8, _offset: u16) -> u32;
+
+        // Maps count bytes from the given physical address and returns
+        // a pointer that can be used to access the memory.
+        fn map(&self, _address: usize, _count: usize) -> *mut u8;
     );
 
     unsafe fn alloc(&self, size: usize) -> *mut u8 {
@@ -158,4 +162,10 @@ unsafe extern "C" fn laihost_pci_readw(seg: u16, bus: u8, slot: u8, fun: u8, off
 #[no_mangle]
 unsafe extern "C" fn laihost_pci_readd(seg: u16, bus: u8, slot: u8, fun: u8, offset: u16) -> u32 {
     get_laihost().pci_readd(seg, bus, slot, fun, offset)
+}
+
+// Memory functions:
+#[no_mangle]
+unsafe extern "C" fn laihost_map(address: usize, count: usize) -> *mut u8 {
+    get_laihost().map(address, count)
 }
