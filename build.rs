@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{error::Error, path::PathBuf, process::Command};
 
 // lai/meson.build - sources
 const SOURCES: &[&str] = &[
@@ -22,17 +22,27 @@ const SOURCES: &[&str] = &[
     "drivers/timer.c",
 ];
 
+const LAI_GITHUB_URL: &str = "https://github.com/managarm/lai";
+
 fn main() -> Result<(), Box<dyn Error>> {
-    // todo: use enviornment variable to find the lai directory.
-    let lai_path = String::from("bundled/lai");
+    let lai_path_str = String::from("bundled/lai");
+
+    if !PathBuf::from(lai_path_str.clone()).exists() {
+        // If we have not already downloaded the source, do so now.
+        Command::new("git")
+            .args(&["clone", LAI_GITHUB_URL, &lai_path_str])
+            .status()
+            .unwrap();
+    }
+
     let sources = SOURCES
         .iter()
-        .map(|file| format!("{lai_path}/{file}"))
+        .map(|file| format!("{lai_path_str}/{file}"))
         .collect::<Vec<_>>();
 
     cc::Build::new()
         .files(sources)
-        .include(format!("{lai_path}/include"))
+        .include(format!("{lai_path_str}/include"))
         .flag("-fno-stack-protector")
         .compile("lai");
 

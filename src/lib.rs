@@ -35,3 +35,7 @@ pub fn enable_acpi(mode: u32) {
 pub fn enter_sleep(sleep_state: u8) {
     unsafe { assert_eq!(raw::lai_enter_sleep(sleep_state), raw::LAI_SUCCESS) }
 }
+
+pub fn reset() {
+    unsafe { assert_eq!(raw::lai_acpi_reset(), raw::LAI_SUCCESS) }
+}

@@ -5,4 +5,5 @@ extern "C" {
     pub(crate) fn lai_create_namespace();
     pub(crate) fn lai_enable_acpi(mode: u32) -> i32;
     pub(crate) fn lai_enter_sleep(sleep_state: u8) -> i32;
+    pub(crate) fn lai_acpi_reset() -> i32;
 }
