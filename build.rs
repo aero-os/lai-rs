@@ -1,4 +1,6 @@
-use std::{error::Error, path::PathBuf, process::Command};
+use std::error::Error;
+use std::path::PathBuf;
+use std::process::Command;
 
 // lai/meson.build - sources
 const SOURCES: &[&str] = &[
@@ -40,10 +42,24 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map(|file| format!("{lai_path_str}/{file}"))
         .collect::<Vec<_>>();
 
+    // NOTE: The build is configured for kernel enviornments.
     cc::Build::new()
         .files(sources)
         .include(format!("{lai_path_str}/include"))
         .flag("-fno-stack-protector")
+        // The mmx and sse features determine support for SIMD instructions, which can often speed up
+        // programs significantly. However, using the large SIMD registers in OS kernels leads to
+        // performance problems.
+        .flag("-mno-sse")
+        .flag("-mno-mmx")
+        // Inform the compiler that the target does not have floating-point hardware.
+        .flag("-msoft-float")
+        // Disable stack pointer optimization called the “red zone”, because it would cause
+        // stack corruptions otherwise.
+        .flag("-mno-red-zone")
+        .flag("-fno-builtin")
+        .flag("-nostdlib")
+        .flag("-ffreestanding")
         .compile("lai");
 
     Ok(())
