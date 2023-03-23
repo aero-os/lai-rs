@@ -55,7 +55,7 @@ pub trait Host {
         alloc::alloc::dealloc(ptr, layout);
     }
 
-    unsafe fn realloc(&self, ptr: *mut u8, old_size: usize, new_size: usize) -> *mut u8 {
+    unsafe fn realloc(&self, ptr: *mut u8, new_size: usize, old_size: usize) -> *mut u8 {
         let layout = Layout::from_size_align_unchecked(old_size, 16);
         alloc::alloc::realloc(ptr, layout, new_size)
     }
@@ -101,8 +101,8 @@ unsafe extern "C" fn laihost_free(ptr: *mut u8, size: usize) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn laihost_realloc(ptr: *mut u8, old_size: usize, new_size: usize) -> *mut u8 {
-    get_laihost().realloc(ptr, old_size, new_size)
+unsafe extern "C" fn laihost_realloc(ptr: *mut u8, new_size: usize, old_size: usize) -> *mut u8 {
+    get_laihost().realloc(ptr, new_size, old_size)
 }
 
 #[no_mangle]
