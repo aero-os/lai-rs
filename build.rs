@@ -33,7 +33,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if !lai_path.exists() {
         Command::new("git")
-            .args(&["clone", LAI_GITHUB_URL, &lai_path_str])
+            .args(["clone", LAI_GITHUB_URL, &lai_path_str])
             .status()
             .unwrap();
     }
@@ -62,6 +62,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         .flag("-nostdlib")
         .flag("-ffreestanding")
         .compile("lai");
+
+    println!("cargo:rerun-if-changed=src/wrapper.h");
+
+    bindgen::Builder::default()
+        .use_core()
+        .clang_arg(format!("-I{lai_path_str}/include"))
+        .header("src/wrapper.h")
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .generate()
+        .unwrap()
+        .write_to_file(Path::new(&out_dir).join("lai_sys.rs"))
+        .unwrap();
 
     Ok(())
 }
